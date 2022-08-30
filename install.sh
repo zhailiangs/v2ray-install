@@ -1,8 +1,20 @@
 #!/bin/bash
-ZIPFILE="/root/v2ray-linux-64.zip"
+ZIPFILE="/tmp/v2ray/v2ray-linux-64.zip"
 SYSTEMCTL_CMD=$(command -v systemctl 2>/dev/null)
 SERVICE_CMD=$(command -v service 2>/dev/null)
 
+downloadV2Ray(){
+    rm -rf /tmp/v2ray
+    mkdir -p /tmp/v2ray
+    DOWNLOAD_LINK="https://github.com/zhailiangs/v2ray-install/raw/main/v2ray-linux-64.zip"
+    echo "Downloading V2Ray: ${DOWNLOAD_LINK}"
+    curl -L -H "Cache-Control: no-cache" -o ${ZIPFILE} ${DOWNLOAD_LINK}
+    if [ $? != 0 ];then
+        echo "Failed to download! Please check your network or try again."
+        return 3
+    fi
+    return 0
+}
 zipRoot() {
     unzip -lqq "$1" | awk -e '
         NR == 1 {
@@ -105,9 +117,11 @@ if pgrep "v2ray" > /dev/null ; then
     V2RAY_RUNNING=1
     stopV2ray
 fi
+downloadV2Ray
 ZIPROOT="$(zipRoot "${ZIPFILE}")"
 installV2Ray "${ZIPFILE}" "${ZIPROOT}"
 installInitScript "${ZIPFILE}" "${ZIPROOT}"
 echo "start V2Ray service."
 startV2ray
 echo "V2Ray is installed."
+rm -rf /tmp/v2ray
